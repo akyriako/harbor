@@ -24,6 +24,7 @@ export const ADAPTERS_MAP = {
     'helm-hub': 'Helm Hub',
     'artifact-hub': 'Artifact Hub',
     'huawei-SWR': 'Huawei SWR',
+    'opentelekomcloud-swr': 'Open Telekom Cloud SWR',
     'jfrog-artifactory': 'JFrog Artifactory',
     quay: 'Quay',
     dtr: 'DTR',

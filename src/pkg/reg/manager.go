@@ -43,6 +43,8 @@ import (
 	_ "github.com/goharbor/harbor/src/pkg/reg/adapter/harbor"
 	// register the huawei adapter
 	_ "github.com/goharbor/harbor/src/pkg/reg/adapter/huawei"
+	// register the opentelekomcloud adapter
+	_ "github.com/goharbor/harbor/src/pkg/reg/adapter/opentelekomcloud"
 	// register the Jfrog Artifactory adapter
 	_ "github.com/goharbor/harbor/src/pkg/reg/adapter/jfrog"
 	// register the Native adapter
