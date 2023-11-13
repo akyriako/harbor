@@ -35,7 +35,7 @@ func getMockAdapter(t *testing.T) *adapter {
 		Name:        "Open Telekom Cloud",
 		Description: "Adapter for Open Telekom Cloud SWR",
 		Type:        model.RegistryTypeOpenTelekomCloud,
-		URL:         "https://swr.cn-north-1.myhuaweicloud.com",
+		URL:         mockUrl,
 		Credential:  &model.Credential{AccessKey: mockAccessKey, AccessSecret: mockAccessSecret},
 		Insecure:    false,
 		Status:      "",

@@ -58,18 +58,18 @@ var (
 	_ adp.ArtifactRegistry = (*adapter)(nil)
 )
 
-// Adapter is for images replications between harbor and Huawei image repository(SWR)
+// Adapter is for images replications between harbor and Open Telekom Cloud image repository(SWR)
 type adapter struct {
 	*native.Adapter
 	registry *model.Registry
 	client   *commonhttp.Client
-	// original http client with no modifer,
+	// original http client with no modifier,
 	// opentelekomcloud's some api interface with basic authorization,
 	// some with bearer token authorization.
 	oriClient *http.Client
 }
 
-// Info gets info about Huawei SWR
+// Info gets info about Open Telekom Cloud SWR
 func (a *adapter) Info() (*model.RegistryInfo, error) {
 	registryInfo := model.RegistryInfo{
 		Type:                   model.RegistryTypeOpenTelekomCloud,
@@ -157,7 +157,7 @@ func (a *adapter) ConvertResourceMetadata(resourceMetadata *model.ResourceMetada
 	return metadata, nil
 }
 
-// PrepareForPush prepare for push to Huawei SWR
+// PrepareForPush prepare for push to Open Telekom Cloud SWR
 func (a *adapter) PrepareForPush(resources []*model.Resource) error {
 	namespaces := map[string]struct{}{}
 	for _, resource := range resources {
@@ -260,7 +260,7 @@ func (a *adapter) GetNamespace(namespaceStr string) (*model.Namespace, error) {
 	return namespace, nil
 }
 
-// HealthCheck check health for huawei SWR
+// HealthCheck check health for Open Telekom Cloud SWR
 func (a *adapter) HealthCheck() (string, error) {
 	return model.Healthy, nil
 }

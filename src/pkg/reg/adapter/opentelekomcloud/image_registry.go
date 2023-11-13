@@ -27,7 +27,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/reg/model"
 )
 
-// FetchArtifacts gets resources from Huawei SWR
+// FetchArtifacts gets resources from Open Telekom Cloud SWR
 func (a *adapter) FetchArtifacts(filters []*model.Filter) ([]*model.Resource, error) {
 	resources := []*model.Resource{}
 
@@ -45,7 +45,10 @@ func (a *adapter) FetchArtifacts(filters []*model.Filter) ([]*model.Resource, er
 		return resources, err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	code := resp.StatusCode
 	if code >= 300 || code < 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -55,7 +58,7 @@ func (a *adapter) FetchArtifacts(filters []*model.Filter) ([]*model.Resource, er
 	if err != nil {
 		return resources, err
 	}
-	repos := []hwRepoQueryResult{}
+	repos := []OtcRepoQueryResult{}
 	err = json.Unmarshal(body, &repos)
 	if err != nil {
 		return resources, err
@@ -68,8 +71,12 @@ func (a *adapter) FetchArtifacts(filters []*model.Filter) ([]*model.Resource, er
 	return resources, nil
 }
 
-// ManifestExist check the manifest of Huawei SWR
-func (a *adapter) ManifestExist(repository, reference string) (exist bool, desc *distribution.Descriptor, err error) {
+// ManifestExist check the manifest of Open Telekom Cloud SWR
+func (a *adapter) ManifestExist(repository, reference string) (
+	exist bool,
+	desc *distribution.Descriptor,
+	err error,
+) {
 	token, err := getJwtToken(a, repository)
 	if err != nil {
 		return exist, nil, err
@@ -90,7 +97,10 @@ func (a *adapter) ManifestExist(repository, reference string) (exist bool, desc 
 		return exist, nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	code := resp.StatusCode
 	if code >= 300 || code < 200 {
 		if code == 404 {
@@ -104,19 +114,19 @@ func (a *adapter) ManifestExist(repository, reference string) (exist bool, desc 
 		return exist, nil, err
 	}
 	exist = true
-	manifest := hwManifest{}
+	manifest := OtcManifest{}
 	err = json.Unmarshal(body, &manifest)
 	if err != nil {
 		return exist, nil, err
 	}
 	contentType := resp.Header.Get("Content-Type")
 	contentLen := resp.Header.Get("Content-Length")
-	len, _ := strconv.Atoi(contentLen)
+	clen, _ := strconv.Atoi(contentLen)
 
-	return exist, &distribution.Descriptor{MediaType: contentType, Size: int64(len)}, nil
+	return exist, &distribution.Descriptor{MediaType: contentType, Size: int64(clen)}, nil
 }
 
-// DeleteManifest delete the manifest of Huawei SWR
+// DeleteManifest delete the manifest of Open Telekom Cloud SWR
 func (a *adapter) DeleteManifest(repository, reference string) error {
 	token, err := getJwtToken(a, repository)
 	if err != nil {
@@ -137,7 +147,10 @@ func (a *adapter) DeleteManifest(repository, reference string) error {
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	code := resp.StatusCode
 	if code >= 300 || code < 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -147,7 +160,7 @@ func (a *adapter) DeleteManifest(repository, reference string) error {
 	return nil
 }
 
-func parseRepoQueryResultToResource(repo hwRepoQueryResult) *model.Resource {
+func parseRepoQueryResultToResource(repo OtcRepoQueryResult) *model.Resource {
 	var resource model.Resource
 	info := make(map[string]interface{})
 	info["category"] = repo.Category
@@ -178,7 +191,7 @@ func parseRepoQueryResultToResource(repo hwRepoQueryResult) *model.Resource {
 	return &resource
 }
 
-type hwRepoQueryResult struct {
+type OtcRepoQueryResult struct {
 	Name        string `json:"name"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
@@ -216,7 +229,10 @@ func getJwtToken(a *adapter, repository string) (token jwtToken, err error) {
 		return token, err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	code := resp.StatusCode
 	if code >= 300 || code < 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -239,7 +255,7 @@ type jwtToken struct {
 	IssuedAt  time.Time `json:"issued_at" description:"token issued time"`
 }
 
-type hwManifest struct {
+type OtcManifest struct {
 	// SchemaVersion is the image manifest schema that this image follows
 	SchemaVersion int `json:"schemaVersion"`
 
@@ -247,17 +263,17 @@ type hwManifest struct {
 	MediaType string `json:"mediaType,omitempty"`
 
 	// Config references the image configuration as a blob.
-	Config hwDescriptor `json:"config"`
+	Config OtcDescriptor `json:"config"`
 
 	// Layers lists descriptors for the layers referenced by the
 	// configuration.
-	Layers []hwDescriptor `json:"layers"`
+	Layers []OtcDescriptor `json:"layers"`
 
 	// summary keeps the summary infos
-	Summary hwManifestSummary `json:"-"`
+	Summary OtcManifestSummary `json:"-"`
 }
 
-type hwDescriptor struct {
+type OtcDescriptor struct {
 	// MediaType describe the type of the content. All text based formats are
 	// encoded as utf-8.
 	MediaType string `json:"mediaType,omitempty"`
@@ -272,11 +288,11 @@ type hwDescriptor struct {
 	// URLs contains the source URLs of this content.
 	URLs []string `json:"urls,omitempty"`
 
-	// depandence
+	// dependence
 	Dependence string `json:"dependence,omitempty"`
 }
 
-type hwManifestSummary struct {
+type OtcManifestSummary struct {
 	Config   string
 	RepoTags []string
 	Layers   []string

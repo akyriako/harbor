@@ -26,21 +26,22 @@ import (
 )
 
 func mockRequest() *gock.Request {
-	return gock.New("https://swr.cn-north-1.myhuaweicloud.com")
+	return gock.New(mockUrl)
 }
 
-func getHwMockAdapter(t *testing.T) *adapter {
-	hwRegistry := &model.Registry{
+func getOtcMockAdapter(t *testing.T) *adapter {
+	otcRegistry := &model.Registry{
 		ID:          1,
-		Name:        "Huawei",
-		Description: "Adapter for SWR -- The image registry of Huawei Cloud",
-		Type:        model.RegistryTypeHuawei,
-		URL:         "https://swr.cn-north-1.myhuaweicloud.com",
-		Credential:  &model.Credential{AccessKey: "cn-north-1@IJYZLFBKBFN8LOUITAH", AccessSecret: "f31e8e2b948265afdae32e83722a7705fd43e154585ff69e64108247750e5d"},
+		Name:        "Open Telekom Cloud",
+		Description: "Adapter for Open Telekom Cloud SWR",
+		Type:        model.RegistryTypeOpenTelekomCloud,
+		URL:         mockUrl,
+		Credential:  &model.Credential{AccessKey: mockAccessKey, AccessSecret: mockAccessSecret},
 		Insecure:    false,
 		Status:      "",
 	}
-	adp, err := newAdapter(hwRegistry)
+
+	adp, err := newAdapter(otcRegistry)
 	if err != nil {
 		t.Fatalf("Failed to call newAdapter(), reason=[%v]", err)
 	}
@@ -66,14 +67,14 @@ func TestAdapter_FetchArtifacts(t *testing.T) {
 	gock.Observe(gock.DumpRequest)
 
 	mockRequest().Get("/dockyard/v2/repositories").MatchParam("filter", "center::self").
-		BasicAuth("cn-north-1@IJYZLFBKBFN8LOUITAH", "f31e8e2b948265afdae32e83722a7705fd43e154585ff69e64108247750e5d").
+		BasicAuth(mockAccessKey, mockAccessSecret).
 		Reply(200).
-		JSON([]hwRepoQueryResult{
+		JSON([]OtcRepoQueryResult{
 			{Name: "name1"},
 			{Name: "name2"},
 		})
 
-	a := getHwMockAdapter(t)
+	a := getOtcMockAdapter(t)
 	resources, err := a.FetchArtifacts(nil)
 	assert.NoError(t, err)
 	assert.Len(t, resources, 2)
@@ -86,11 +87,11 @@ func TestAdapter_ManifestExist(t *testing.T) {
 	mockGetJwtToken("sundaymango_mango/hello-world")
 	mockRequest().Get("/v2/sundaymango_mango/hello-world/manifests/latest").
 		Reply(200).
-		JSON(hwManifest{
+		JSON(OtcManifest{
 			MediaType: distribution.ManifestMediaTypes()[0],
 		})
 
-	a := getHwMockAdapter(t)
+	a := getOtcMockAdapter(t)
 	exist, _, err := a.ManifestExist("sundaymango_mango/hello-world", "latest")
 	assert.NoError(t, err)
 	assert.True(t, exist)
@@ -103,7 +104,7 @@ func TestAdapter_DeleteManifest(t *testing.T) {
 	mockGetJwtToken("sundaymango_mango/hello-world")
 	mockRequest().Delete("/v2/sundaymango_mango/hello-world/manifests/latest").Reply(200)
 
-	a := getHwMockAdapter(t)
+	a := getOtcMockAdapter(t)
 	err := a.DeleteManifest("sundaymango_mango/hello-world", "latest")
 	assert.NoError(t, err)
 }
