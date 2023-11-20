@@ -195,18 +195,26 @@ func (a *adapter) PrepareForPush(resources []*model.Resource) error {
 
 		r.Header.Add("content-type", "application/json; charset=utf-8")
 
-		resp, err := a.client.Do(r)
+		err = func() error {
+			resp, err := a.client.Do(r)
+			if err != nil {
+				return err
+			}
+
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(resp.Body)
+
+			code := resp.StatusCode
+			if code >= 300 || code < 200 {
+				body, _ := io.ReadAll(resp.Body)
+				return fmt.Errorf("[%d][%s]", code, string(body))
+			}
+
+			return nil
+		}()
 		if err != nil {
 			return err
-		}
-		defer func(Body io.ReadCloser) {
-			_ = Body.Close()
-		}(resp.Body)
-
-		code := resp.StatusCode
-		if code >= 300 || code < 200 {
-			body, _ := io.ReadAll(resp.Body)
-			return fmt.Errorf("[%d][%s]", code, string(body))
 		}
 
 		log.Debugf("namespace %s created", namespace)
